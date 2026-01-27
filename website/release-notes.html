@@ -9,30 +9,45 @@
     <link rel="icon" href="assets/logo.png" type="image/png">
 
     <!-- Design & Fonts -->
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <!-- Design & Fonts -->
     <link
         href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap"
         rel="stylesheet" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
 
-    <!-- Custom Styles & Config -->
-    <link rel="stylesheet" href="styles.css">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
     <script>
         tailwind.config = {
+            darkMode: "class",
             theme: {
                 extend: {
                     colors: {
                         primary: "#4CAF50",
                         "primary-dark": "#43A047",
+                        "primary-light": "#E8F5E9",
+                        "background-light": "#ffffff",
+                        "background-dark": "#121212",
+                        "text-light": "#333333",
+                        "text-dark": "#e0e0e0",
+                        "accent-dark": "#1E1E1E",
                     },
                     fontFamily: {
                         display: ["Oswald", "sans-serif"],
                         sans: ["Inter", "sans-serif"],
                     },
+                    boxShadow: {
+                        'deep': '0 20px 40px -5px rgba(0, 0, 0, 0.1), 0 10px 20px -5px rgba(0, 0, 0, 0.04)',
+                        'button': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255,255,255,0.4)',
+                    }
                 },
             },
-        };
+        }
     </script>
+
+    <!-- Custom Styles & Config -->
+    <link rel="stylesheet" href="cueTime.css">
+
 
     <style>
         .version-block {
@@ -110,6 +125,11 @@
                 A massive overhaul introducing a complete visual redesign, advanced event scheduling, and smart
                 multi-screen features.
             </p>
+
+            <div class="bg-primary bg-opacity-10 border border-primary text-primary px-4 py-3 rounded-lg mb-6">
+                <strong>✨ Rebranding Alert:</strong> FocusTimer is now <strong>cueTime</strong>! Same great tool, new
+                name and fresh look.
+            </div>
 
             <h4 class="section-heading">Headline Features:</h4>
             <ul class="change-list list-disc pl-5">

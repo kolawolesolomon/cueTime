@@ -21,12 +21,12 @@ const powerSaveBlockerId = powerSaveBlocker.start('prevent-display-sleep');
 
 function createSplash() {
     splashWindow = new BrowserWindow({
-        width: 800,
-        height: 700,
+        width: 600,
+        height: 320,
         frame: false,
         alwaysOnTop: true,
-        transparent: false,
-        backgroundColor: '#0B0D10',
+        transparent: true,
+        backgroundColor: '#00000000',
         resizable: false,
         webPreferences: {
             nodeIntegration: true, // For simple shell usage in splash

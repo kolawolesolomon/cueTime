@@ -25,7 +25,7 @@
         { name: "Ahmed Y.", text: "No panic, no flashing, just time." },
         { name: "Paul B.", text: "Our AV team loves this." },
         { name: "Hannah C.", text: "It just works." },
-        { name: "Samuel I.", text: "FocusTimer feels professional." },
+        { name: "Samuel I.", text: "cueTime feels professional." },
         { name: "Linda W.", text: "Exactly what we needed." },
         { name: "Carlos M.", text: "Simple but powerful." },
         { name: "Joy A.", text: "Clean UI, zero stress." },

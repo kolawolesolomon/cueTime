@@ -5,71 +5,114 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>cueTime Loading...</title>
+    <link href="../assets/fonts/inter.css" rel="stylesheet" />
     <style>
         body {
             margin: 0;
             padding: 0;
-            background-color: #0B0D10;
+            /* Transparent background for the window context */
+            background-color: transparent;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
             color: white;
-            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-family: 'Inter', system-ui, sans-serif;
             overflow: hidden;
             -webkit-user-select: none;
             user-select: none;
         }
 
-        .container {
-            text-align: center;
-            animation: fadeIn 0.5s ease-out;
+        .card {
+            background-color: #0B0D10;
+            width: 100%;
+            /* Occupy full window size defined in main.js */
+            height: 100%;
+            /* Border and Shadow */
+            border: 1px solid #2c2c2c;
+            border-radius: 24px;
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 20px 50px -12px rgba(0, 0, 0, 0.8);
+
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            animation: fadeIn 0.8s ease-out;
+            z-index: 10;
         }
 
         .logo {
-            width: 384px;
-            height: 384px;
+            width: 120px;
+            height: auto;
             margin-bottom: 24px;
-            animation: pulse 2s infinite ease-in-out;
-            filter: invert(1);
+            filter: drop-shadow(0 0 20px rgba(39, 52, 114, 0.3));
+            /* Primary color glow */
+            animation: breathe 4s infinite ease-in-out;
         }
 
         h1 {
-            font-size: 1.5rem;
-            margin: 0 0 8px 0;
-            font-weight: 600;
-            letter-spacing: 1px;
+            font-size: 2rem;
+            margin: 0 0 4px 0;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(to bottom right, #ffffff, #a1a1aa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
-        .beta-tag {
-            background: #2196F3;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.8rem;
-            font-weight: bold;
-            display: inline-block;
-            margin-bottom: 24px;
+        .status {
+            color: #71717a;
+            /* Zinc-500 */
+            font-size: 0.875rem;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-top: 8px;
         }
 
-        .links {
-            display: flex;
-            gap: 16px;
-            justify-content: center;
-            font-size: 0.9rem;
+        /* Progress Bar Container */
+        .progress-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: #18181b;
+            /* Zinc-900 */
+            overflow: hidden;
+            border-bottom-left-radius: 24px;
+            border-bottom-right-radius: 24px;
         }
 
-        a {
-            color: #B0B0B0;
-            text-decoration: none;
-            transition: color 0.2s;
-            cursor: pointer;
+        /* Animated Bar */
+        .progress-bar {
+            height: 100%;
+            width: 30%;
+            background: #273472;
+            /* Primary Branding */
+            box-shadow: 0 0 10px #273472;
+            animation: loading 2s infinite ease-in-out;
         }
 
-        a:hover {
-            color: #FFFFFF;
-            text-decoration: underline;
+        /* Grid Background Pattern for Texture */
+        .grid-bg {
+            position: absolute;
+            inset: 0;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+            opacity: 0.5;
+            -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+            mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+            pointer-events: none;
         }
 
         @keyframes fadeIn {
@@ -84,52 +127,54 @@
             }
         }
 
-        @keyframes pulse {
-            0% {
+        @keyframes breathe {
+
+            0%,
+            100% {
                 transform: scale(1);
                 opacity: 1;
             }
 
             50% {
-                transform: scale(1.05);
+                transform: scale(1.03);
                 opacity: 0.9;
+            }
+        }
+
+        @keyframes loading {
+            0% {
+                transform: translateX(-100%);
+                width: 20%;
+            }
+
+            50% {
+                width: 40%;
             }
 
             100% {
-                transform: scale(1);
-                opacity: 1;
+                transform: translateX(400%);
+                width: 20%;
             }
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <img src="../../icon.png" alt="cueTime Logo" class="logo">
-        <h1>cueTime</h1>
-        <div class="beta-tag">Public Beta (Free) Mode</div>
+    <div class="card">
+        <!-- Subtle Grid Background -->
+        <div class="grid-bg"></div>
 
-        <div class="links">
-            <a href="#" id="feedback">Feedback / Report Bug</a>
-            <span>•</span>
-            <a href="#" id="donate">Support / Donate</a>
+        <div class="content">
+            <img src="../../icon.png" alt="cueTime Logo" class="logo">
+            <h1>cueTime</h1>
+            <div class="status">Initializing Environment...</div>
+        </div>
+
+        <!-- Progress Bar at Bottom -->
+        <div class="progress-container">
+            <div class="progress-bar"></div>
         </div>
     </div>
-
-    <script>
-        // Optional: Open links in external browser
-        const { shell } = require('electron');
-        document.getElementById('feedback').addEventListener('click', (e) => {
-            e.preventDefault();
-            // TODO: Replace with real link
-            console.log("Feedback clicked");
-        });
-        document.getElementById('donate').addEventListener('click', (e) => {
-            e.preventDefault();
-            // TODO: Replace with real link
-            console.log("Donate clicked");
-        });
-    </script>
 </body>
 
 </html>

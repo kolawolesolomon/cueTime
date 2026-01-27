@@ -559,9 +559,10 @@ function init() {
     // 3. Session Title Logic (Sync on Enter)
     els.sessionTitleInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
-            sessionTitle = els.sessionTitleInput.value.trim();
-            broadcastState();
-            els.sessionTitleInput.blur();
+            // Disabled as per user request (Visual bug + Pending "Save Schedule" feature)
+            // sessionTitle = els.sessionTitleInput.value.trim();
+            // broadcastState();
+            // els.sessionTitleInput.blur();
         }
     });
 
