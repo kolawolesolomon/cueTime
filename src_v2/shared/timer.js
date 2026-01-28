@@ -136,6 +136,31 @@ class CueTime {
 
             if (remainingMinutes <= criticalThresholdMin) {
                 nextLevel = 'CRITICAL';
+            } else if (remainingMinutes <= WARNING_THRESHOLDS.MEDIUM) {
+                // New Medium tier (3 mins) for bridging the gap
+                // Only if total duration is long enough to warrant it (e.g. > 10 mins)
+                if (totalMinutes >= 10) {
+                    nextLevel = 'GENTLE'; // Use Gentle color but maybe re-trigger?
+                    // Actually, if we want a DISTINCT "Medium" warning (e.g. Orange vs Yellow),
+                    // we need to define 'MEDIUM' tier. 
+                    // But the UI only handles 'GENTLE' (Yellow) and 'CRITICAL' (Red).
+                    // Re-using 'GENTLE' just keeps it yellow.
+                    // Let's return 'GENTLE' but ensure it triggers if we were previously 'NONE' 
+                    // or if we want a specific blink.
+                    // For now, let's keep it simple: Ensure it hits GENTLE at 3 mins if it hasn't already.
+                    // Wait, if 20m talk, it hits GENTLE at 7m. It STAYS GENTLE until CRITICAL.
+                    // So adding a check at 3m doesn't change anything unless we clear it in between?
+                    // Ah, the issue is "Nothing until 1 minute".
+                    // So it stays Yellow from 7m to 1m. That IS a warning.
+                    // The user said "7 minutes (Amber), and then nothing until 1 minute".
+                    // "Nothing" implies silence/static state.
+                    // Maybe they want a re-notification or a color change?
+                    // "Add a Medium warning tier".
+                    // I will add 'MEDIUM' to the status, and update Renderer to handle it (e.g. Orange).
+                    nextLevel = 'MEDIUM';
+                } else {
+                    nextLevel = 'GENTLE';
+                }
             } else if (remainingMinutes <= gentleThresholdMin) {
                 nextLevel = 'GENTLE';
             }

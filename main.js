@@ -15,6 +15,29 @@ let viewerWindow = null;
 let splashWindow = null;
 let viewerRetryCount = 0;
 const MAX_RETRIES = 5;
+// TEST MODE: Set date to yesterday to trigger expiry
+// const yesterday = new Date();
+// yesterday.setDate(yesterday.getDate() - 1);
+// const EXPIRY_DATE = yesterday;
+const EXPIRY_DATE = new Date('2026-03-01T00:00:00'); // Hardcoded Expiry
+const WARNING_DAYS = 5;
+
+// Expiration Check Helper
+function checkExpiry() {
+    const now = new Date();
+    const timeDiff = EXPIRY_DATE - now;
+    const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+
+    console.log(`[Main] Beta Expiry Check: ${daysLeft} days remaining`);
+
+    if (daysLeft <= 0) {
+        return 'expired';
+    }
+    if (daysLeft <= WARNING_DAYS) {
+        return { status: 'warning', days: daysLeft, date: EXPIRY_DATE.toLocaleDateString() };
+    }
+    return { status: 'valid', days: daysLeft, date: EXPIRY_DATE.toLocaleDateString() };
+}
 
 // Prevent sleep
 const powerSaveBlockerId = powerSaveBlocker.start('prevent-display-sleep');
@@ -32,7 +55,8 @@ function createSplash() {
             nodeIntegration: true, // For simple shell usage in splash
             contextIsolation: false
         },
-        title: 'cueTime'
+        title: 'cueTime',
+        icon: path.join(__dirname, 'icon.png')
     });
 
     splashWindow.loadFile(path.join(__dirname, 'src_v2', 'splash', 'index.html'));
@@ -65,10 +89,32 @@ function createDashboard() {
         },
         title: `cueTime - Dashboard`,
         autoHideMenuBar: true,
-        show: false
+        show: false,
+        icon: path.join(__dirname, 'icon.png')
     });
 
-    dashboardWindow.loadFile(path.join(__dirname, SRC_DIR, 'dashboard', 'index.html'));
+    const expiryStatus = checkExpiry();
+
+    if (expiryStatus === 'expired') {
+        dashboardWindow.loadFile(path.join(__dirname, SRC_DIR, 'expired', 'index.html'));
+    } else {
+        dashboardWindow.loadFile(path.join(__dirname, SRC_DIR, 'dashboard', 'index.html'));
+
+        // Send status on every load (fix reload bug)
+        dashboardWindow.webContents.on('did-finish-load', () => {
+            dashboardWindow.webContents.send('beta-status', expiryStatus);
+
+            // Handle Auto-Launch for Secondary Display
+            if (global.autoLaunchViewer) {
+                console.log('[Main] Dashboard loaded. Executing queued Viewer launch...');
+                const displays = screen.getAllDisplays();
+                if (displays.length > 1 && !viewerWindow) {
+                    createViewer(displays[1].id);
+                }
+                global.autoLaunchViewer = false; // Reset flag
+            }
+        });
+    }
 
     dashboardWindow.once('ready-to-show', () => {
         dashboardWindow.show();
@@ -165,6 +211,7 @@ function createViewer(displayId = null) {
         },
         backgroundColor: '#000000',
         title: 'cueTime - Viewer',
+        icon: path.join(__dirname, 'icon.png')
     });
 
     viewerWindow.loadFile(path.join(__dirname, SRC_DIR, 'viewer', 'index.html'));
@@ -223,6 +270,7 @@ ipcMain.on('launch-viewer', (event, displayId) => {
     createViewer(displayId);
 });
 
+// IPC: Viewer Escape
 ipcMain.on('viewer-escape', () => {
     if (viewerWindow && !viewerWindow.isDestroyed()) {
         viewerWindow.close();
@@ -230,6 +278,12 @@ ipcMain.on('viewer-escape', () => {
     }
 });
 
+// IPC: Open External Link
+ipcMain.on('open-external', (event, url) => {
+    require('electron').shell.openExternal(url);
+});
+
+// Z-Order Restoration
 ipcMain.on('restore-z-order', () => {
     if (dashboardWindow && !dashboardWindow.isDestroyed()) {
         dashboardWindow.setAlwaysOnTop(false);
@@ -291,14 +345,9 @@ app.whenReady().then(() => {
     console.log('[Main] Startup Display Count:', displays.length);
 
     if (displays.length > 1) {
-        console.log('[Main] Multi-screen detected on startup. Launching viewer...');
-        // Auto-launch viewer on secondary
-        setTimeout(() => {
-            if (!viewerWindow) {
-                console.log('[Main] Launching viewer on display:', displays[1].id);
-                createViewer(displays[1].id);
-            }
-        }, 3500); // Wait for splash/dashboard to settle
+        console.log('[Main] Multi-screen detected on startup. Queuing viewer launch...');
+        // Set flag to launch viewer once Dashboard is ready
+        global.autoLaunchViewer = true;
     }
 
     // Dynamic Screen Detection (Runtime)

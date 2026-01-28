@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>cueTime Beta Expired</title>
+    <link href="../assets/fonts/inter.css" rel="stylesheet" />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0B0D10;
+            /* Dark background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: white;
+            font-family: 'Inter', system-ui, sans-serif;
+            overflow: hidden;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .card {
+            background-color: #18181b;
+            /* Zinc 900 */
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            border: 1px solid #27272a;
+        }
+
+        .content {
+            max-width: 400px;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .icon {
+            font-size: 64px;
+            margin-bottom: 24px;
+            filter: drop-shadow(0 0 20px rgba(220, 38, 38, 0.4));
+            /* Red glow */
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin: 0 0 16px 0;
+            font-weight: 700;
+            color: #ef4444;
+            /* Red 500 */
+        }
+
+        p {
+            color: #a1a1aa;
+            /* Zinc 400 */
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 32px;
+        }
+
+        .btn {
+            background-color: #273472;
+            color: white;
+            padding: 14px 32px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background-color: #37468a;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(39, 52, 114, 0.4);
+        }
+
+        .version-info {
+            margin-top: 40px;
+            font-size: 0.8rem;
+            color: #52525b;
+            /* Zinc 600 */
+            font-family: monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <div class="content">
+            <div class="icon">⏳</div>
+            <h1>Beta Expired</h1>
+            <p>
+                This beta version of cueTime expired on<br>
+                <strong style="color: white;">March 1st, 2026</strong>.
+            </p>
+            To continue using cueTime, please download the latest version from our website.
+            </p>
+            <button id="btn-download" class="btn">
+                Download Update
+            </button>
+            <div class="version-info">
+                Version 2.0.0 (Beta)<br>
+                Build ID: 20260127
+            </div>
+        </div>
+    </div>
+
+    <!-- Logic -->
+    <script>
+        document.getElementById('btn-download').addEventListener('click', () => {
+            // Replace with your actual repository URL
+            const REPO_URL = "https://github.com/edweafrica-collab/cueTime/releases";
+
+            if (window.electronAPI && window.electronAPI.openExternal) {
+                window.electronAPI.openExternal(REPO_URL);
+            } else {
+                // Fallback if API missing (shouldn't happen in app)
+                window.location.href = REPO_URL;
+            }
+        });
+    </script>
+</body>
+
+</html>

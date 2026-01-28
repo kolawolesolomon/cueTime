@@ -86,6 +86,8 @@ function fitTimerText(text) {
     }
 }
 
+let overtimeTimeout = null;
+
 function enterOvertime() {
     isOvertime = true;
 
@@ -93,24 +95,27 @@ function enterOvertime() {
     // 1. Fade out numbers
     els.timerDisplay.style.opacity = '0';
 
-    setTimeout(() => {
+    if (overtimeTimeout) clearTimeout(overtimeTimeout);
+
+    overtimeTimeout = setTimeout(() => {
         // 2. Switch to hidden
         els.timerDisplay.classList.add('hidden');
         els.overtimeDisplay.classList.remove('hidden');
 
-        // 3. Fade in TIME UP
-        // (Handled by CSS animation classes or natural opacity if we added it)
-        // Adding a slight delay or just let it pop if "calm" isn't prioritized for "TIME UP" 
-        // But proposal said "Dissolve".
+        // 3. Fade in TIME UP (Handled by CSS or natural opacity)
     }, 300);
 
     // Background Pulse (Classic Breathing Effect)
-    // els.body.classList.add('bg-red-950'); // Removed static
     document.body.classList.add('overtime-mode');
 }
 
 function exitOvertime() {
     isOvertime = false;
+
+    if (overtimeTimeout) {
+        clearTimeout(overtimeTimeout);
+        overtimeTimeout = null;
+    }
 
     // Reset Background
     // els.body.classList.remove('bg-red-950');

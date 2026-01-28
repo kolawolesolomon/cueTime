@@ -33,4 +33,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
         callback(value);
     }),
     restoreZOrder: () => ipcRenderer.send('restore-z-order'),
+    onBetaStatus: (callback) => ipcRenderer.on('beta-status', (_event, value) => callback(value)),
+
+    // Utilities
+    openExternal: (url) => ipcRenderer.send('open-external', url)
 });

@@ -685,6 +685,31 @@ function init() {
 
         els.newScreenModal.showModal();
     });
+
+    // 12. Beta Status Handler
+    if (window.electronAPI.onBetaStatus) {
+        window.electronAPI.onBetaStatus((status) => {
+            const badge = document.getElementById('beta-badge');
+            if (!badge) return;
+
+            console.log('[Renderer] Beta Status:', status);
+
+            if (status === 'expired') {
+                window.location.href = '../expired/index.html';
+            } else if (status.status === 'warning') {
+                // Warning State (Yellow/Pulsing)
+                badge.classList.remove('bg-zinc-800', 'border-zinc-700');
+                badge.classList.add('bg-amber-900/40', 'border-amber-700/50', 'animate-pulse');
+
+                const text = badge.querySelector('span');
+                if (text) {
+                    text.classList.remove('text-zinc-400', 'group-hover:text-zinc-200');
+                    text.classList.add('text-amber-500');
+                    text.textContent = `BETA EXPIRING (${status.days} DAYS)`;
+                }
+            }
+        });
+    }
 }
 
 // Logic Helpers
