@@ -19,6 +19,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Persistence
     saveState: (state) => ipcRenderer.send('save-state', state),
     loadState: () => ipcRenderer.invoke('load-state'),
+    
+    // Analytics Persistence & Reports
+    saveAnalytics: (state) => ipcRenderer.send('save-analytics', state),
+    loadAnalytics: () => ipcRenderer.invoke('load-analytics'),
+    purgeAnalytics: () => ipcRenderer.invoke('purge-analytics'),
+    exportCsvReport: (data, rows) => ipcRenderer.invoke('export-csv-report', data, rows),
+
 
     // Viewer Control
     sendViewerEscape: () => ipcRenderer.send('viewer-escape'),

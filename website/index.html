@@ -84,13 +84,12 @@
             without awkward hand signals or panic
         </p>
 
-        <!-- CTA Button -->
         <div class="mt-6">
             <a class="notification-float inline-flex items-center bg-primary hover:bg-primary-dark text-white font-semibold py-2.5 px-8 rounded-lg shadow-button transition-all duration-200 transform hover:-translate-y-0.5"
-                href="FocusTimer-Setup-1.1.7.exe" download id="download-btn">
+                href="cueTime-Setup-2.0.1.exe" download id="download-btn">
                 <span class="material-icons mr-2 text-lg">download</span>
                 <span class="flex flex-col items-start leading-tight">
-                    <span class="text-sm font-bold">Download</span>
+                    <span class="text-sm font-bold">Download v2.0.1</span>
                     <span class="text-xs opacity-80">for Windows 10/11</span>
                 </span>
             </a>
@@ -138,21 +137,22 @@
                 <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Created by</p>
                 <p class="flex items-center justify-center gap-1">
                     <span class="material-icons text-sm text-primary">code</span>
-                    <a href="#" class="text-gray-600 hover:text-primary transition-colors">DevStudio</a>
+                    <a href="#" id="open-profile-btn"
+                        class="text-gray-600 hover:text-primary transition-colors">Solomon</a>
                 </p>
             </div>
             <div class="text-center">
-                <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Designed by</p>
+                <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Designed in</p>
                 <p class="flex items-center justify-center gap-1">
                     <span class="material-icons text-sm text-primary">brush</span>
-                    <a href="#" class="text-gray-600 hover:text-primary transition-colors">Aris Design</a>
+                    <a href="#" class="text-gray-600 hover:text-primary transition-colors">Lagos, Nigeria 🇳🇬</a>
                 </p>
             </div>
         </div>
 
         <!-- Buy me a coffee -->
         <div class="mb-4">
-            <a href="#"
+            <a href="https://paystack.shop/pay/cuetime" target="_blank" rel="noopener"
                 class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-primary transition-colors">
                 <span class="material-icons text-sm">coffee</span>
                 Buy me a coffee
@@ -161,7 +161,7 @@
 
         <!-- Copyright -->
         <p class="text-xs text-gray-400 mb-2">
-            © 2023 cueTime App. All rights reserved.
+            © 2026 cueTime App. All rights reserved.
         </p>
 
         <!-- Thanks -->
@@ -174,6 +174,238 @@
     <div id="testimonial-container"></div>
     <script src="testimonials.js"></script>
 
+    <!-- Profile Modal (Developed by Solomon) -->
+    <div id="profile-modal"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 opacity-0 pointer-events-none transition-opacity duration-300">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" id="profile-overlay"></div>
+
+        <!-- Modal Content -->
+        <div class="relative w-full max-w-5xl bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300"
+            id="profile-content">
+            <div class="grid grid-cols-1 lg:grid-cols-2 min-h-[500px]">
+
+                <!-- Left Side: Info -->
+                <div class="p-8 sm:p-12 flex flex-col justify-center relative">
+                    <!-- Close Button (Mobile) -->
+                    <button id="close-profile-mobile"
+                        class="absolute top-4 right-4 lg:hidden p-2 text-gray-500 hover:text-gray-900 dark:hover:text-white rounded-full hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
+                        <span class="material-icons">close</span>
+                    </button>
+
+                    <div class="mb-6 opacity-0 translate-y-4 transition-all duration-500 delay-100 reveal-item">
+                        <div
+                            class="inline-flex items-center space-x-2 text-sm text-primary font-medium bg-primary/10 px-3 py-1 rounded-full">
+                            <span class="material-icons text-sm">code</span>
+                            <span>Full Stack Developer</span>
+                        </div>
+                    </div>
+
+                    <h2
+                        class="text-4xl sm:text-5xl font-display font-bold text-gray-900 dark:text-white mb-6 opacity-0 translate-y-4 transition-all duration-500 delay-200 reveal-item">
+                        Hi, I'm Solomon.
+                    </h2>
+
+                    <p
+                        class="text-lg text-gray-600 dark:text-gray-300 mb-8 leading-relaxed opacity-0 translate-y-4 transition-all duration-500 delay-300 reveal-item">
+                        Most software is too loud. I build the quiet kind—tools that solve complex problems without
+                        creating new ones.
+                        From high-performance backends to seamless user flows, I write code that works so well you’ll
+                        forget it’s even there.
+                    </p>
+
+                    <!-- Stats / Details -->
+                    <div
+                        class="grid grid-cols-2 gap-6 mb-8 opacity-0 translate-y-4 transition-all duration-500 delay-400 reveal-item">
+                        <div
+                            class="bg-gray-50 dark:bg-white/5 p-4 rounded-xl border border-gray-100 dark:border-white/5">
+                            <span class="block text-2xl font-bold text-primary mb-1">5+</span>
+                            <span class="text-sm text-gray-500 dark:text-gray-400">Years Building</span>
+                        </div>
+                        <div
+                            class="bg-gray-50 dark:bg-white/5 p-4 rounded-xl border border-gray-100 dark:border-white/5">
+                            <span class="block text-2xl font-bold text-primary mb-1">100%</span>
+                            <span class="text-sm text-gray-500 dark:text-gray-400">Passion</span>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div
+                        class="flex flex-col items-start space-y-4 opacity-0 translate-y-4 transition-all duration-500 delay-500 reveal-item relative">
+                        <!-- Social Dock (Hidden by default) -->
+                        <div id="social-dock"
+                            class="absolute bottom-16 left-0 opacity-0 pointer-events-none translate-y-2 transition-all duration-300 z-20">
+                            <div
+                                class="relative flex items-center gap-0.5 px-1.5 py-1.5 rounded-2xl bg-neutral-900 border border-white/10 shadow-2xl">
+                                <div
+                                    class="absolute inset-0 rounded-2xl bg-gradient-to-b from-white/5 to-transparent pointer-events-none">
+                                </div>
+
+                                <!-- WhatsApp -->
+                                <a href="https://wa.me/08168368004" target="_blank" rel="noopener noreferrer"
+                                    class="group relative flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200 hover:scale-110">
+                                    <span
+                                        class="absolute inset-1 rounded-lg bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                                    <svg viewBox="0 0 24 24" fill="currentColor"
+                                        class="w-[18px] h-[18px] text-gray-400 group-hover:text-white transition-colors relative z-10">
+                                        <path
+                                            d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.15-2.9-7.01C17.18 3.03 14.68 2 12.04 2zM12.05 20.21c-1.5 0-2.97-.39-4.27-1.15l-.3-.18-3.12.82.83-3.04-.2-.31c-.82-1.31-1.26-2.83-1.26-4.45 0-4.64 3.77-8.4 8.41-8.4 2.25 0 4.36.88 5.95 2.47 1.59 1.59 2.47 3.69 2.47 5.94 0 4.63-3.77 8.39-8.41 8.39h-.1zM16.63 14.39c-.25-.13-1.5-.74-1.73-.83-.23-.09-.39-.13-.56.13-.17.26-.66.83-.81 1-.14.17-.29.19-.54.06-.25-.13-1.05-.39-1.99-1.23-.74-.66-1.24-1.47-1.38-1.73-.13-.25-.01-.39.11-.51.11-.11.25-.29.37-.43.13-.15.17-.25.25-.42.08-.17.04-.32-.02-.45-.06-.13-.56-1.35-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.22.25-.86.84-.86 2.05 0 1.21.88 2.39 1 2.53.13.14 1.73 2.64 4.19 3.7.59.26 1.04.41 1.4.53.59.19 1.14.16 1.58.1.48-.07 1.49-.61 1.7-1.19.22-.59.22-1.09.15-1.19-.07-.09-.25-.15-.5-.28z" />
+                                    </svg>
+                                    <!-- Tooltip -->
+                                    <span
+                                        class="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-white text-black text-[10px] font-bold rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                                        WhatsApp
+                                    </span>
+                                </a>
+
+                                <!-- Instagram -->
+                                <a href="https://instagram.com/ijishakin" target="_blank" rel="noopener noreferrer"
+                                    class="group relative flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200 hover:scale-110">
+                                    <span
+                                        class="absolute inset-1 rounded-lg bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                                    <svg viewBox="0 0 24 24" fill="currentColor"
+                                        class="w-[18px] h-[18px] text-gray-400 group-hover:text-white transition-colors relative z-10">
+                                        <path
+                                            d="M7.8,2H16.2C19.4,2 22,4.6 22,7.8V16.2A5.8,5.8 0 0,1 16.2,22H7.8C4.6,22 2,19.4 2,16.2V7.8A5.8,5.8 0 0,1 7.8,2M7.6,4A3.6,3.6 0 0,0 4,7.6V16.4C4,18.39 5.61,20 7.6,20H16.4A3.6,3.6 0 0,0 20,16.4V7.6C20,5.61 18.39,4 16.4,4H7.6M12,6.8A5.2,5.2 0 0,1 17.2,12A5.2,5.2 0 0,1 12,17.2A5.2,5.2 0 0,1 6.8,12A5.2,5.2 0 0,1 12,6.8M12,8.8A3.2,3.2 0 0,0 8.8,12A3.2,3.2 0 0,0 12,15.2A3.2,3.2 0 0,0 15.2,12A3.2,3.2 0 0,0 12,8.8M18,5A1,1 0 0,1 19,6A1,1 0 0,1 18,7A1,1 0 0,1 17,6A1,1 0 0,1 18,5Z" />
+                                    </svg>
+                                    <span
+                                        class="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-white text-black text-[10px] font-bold rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Instagram</span>
+                                </a>
+
+                                <!-- Facebook -->
+                                <a href="#" title="Facebook Profile"
+                                    class="group relative flex items-center justify-center w-10 h-10 rounded-xl bg-white/5 opacity-40 cursor-not-allowed">
+                                    <svg viewBox="0 0 24 24" fill="currentColor"
+                                        class="w-[18px] h-[18px] text-gray-500 relative z-10">
+                                        <path
+                                            d="M12 2.04C6.5 2.04 2 6.53 2 12.06C2 17.06 5.66 21.21 10.44 21.96V14.96H7.9V12.06H10.44V9.85C10.44 7.34 11.93 5.96 14.15 5.96C15.21 5.96 16.12 6.04 16.12 6.04V8.51H15.01C13.77 8.51 13.38 9.28 13.38 10.07V12.06H16.15L15.71 14.96H13.38V21.96C18.16 21.21 21.82 17.06 21.82 12.06C21.82 6.53 17.32 2.04 12 2.04Z" />
+                                    </svg>
+                                </a>
+
+                                <!-- TikTok -->
+                                <a href="https://tiktok.com/@ijishakin" target="_blank" rel="noopener noreferrer"
+                                    class="group relative flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200 hover:scale-110">
+                                    <span
+                                        class="absolute inset-1 rounded-lg bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                                    <svg viewBox="0 0 24 24" fill="currentColor"
+                                        class="w-[18px] h-[18px] text-gray-400 group-hover:text-white transition-colors relative z-10">
+                                        <path
+                                            d="M12.5 3a.5.5 0 0 0-.5.5v13.5a2.5 2.5 0 0 1-2.5 2.5 2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5v-3a5.5 5.5 0 0 0-5.5 5.5 5.5 5.5 0 0 0 5.5 5.5 5.5 5.5 0 0 0 5.5-5.5V6.5a8.5 8.5 0 0 1 5.5 2V5.5A5.5 5.5 0 0 0 12.5 3z" />
+                                    </svg>
+                                    <span
+                                        class="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-white text-black text-[10px] font-bold rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">TikTok</span>
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center space-x-4">
+                            <button id="btn-lets-talk"
+                                class="inline-flex items-center justify-center bg-primary hover:bg-primary-dark text-white font-semibold h-12 px-8 rounded-lg transition-all shadow-button hover:-translate-y-0.5">
+                                Let’s Talk
+                            </button>
+                            <a href="https://github.com/solomon" target="_blank" rel="noopener"
+                                class="inline-flex items-center justify-center text-gray-600 dark:text-gray-300 hover:text-primary font-medium h-12 px-4 transition-colors group">
+                                Github
+                                <span
+                                    class="material-icons ml-1 transform transition-transform group-hover:translate-x-1 text-sm">arrow_forward</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Side: Image -->
+                <div class="relative h-64 lg:h-auto overflow-hidden bg-gray-100 dark:bg-zinc-800">
+                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1000&auto=format&fit=crop"
+                        alt="Solomon"
+                        class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 hover:scale-105">
+
+                    <!-- Close Button (Desktop) -->
+                    <button id="close-profile-desktop"
+                        class="absolute top-6 right-6 hidden lg:flex items-center justify-center w-10 h-10 bg-white/90 backdrop-blur text-gray-900 rounded-full hover:bg-white transition-all shadow-lg hover:rotate-90">
+                        <span class="material-icons">close</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script for Profile Modal -->
+    <script>
+        const profileModal = document.getElementById('profile-modal');
+        const profileContent = document.getElementById('profile-content');
+        const openProfileBtn = document.getElementById('open-profile-btn'); // Needs ID on footer link
+        const closeProfileBtns = document.querySelectorAll('#profile-overlay, #close-profile-mobile, #close-profile-desktop');
+        const revealItems = document.querySelectorAll('.reveal-item');
+
+        function openModal() {
+            profileModal.classList.remove('opacity-0', 'pointer-events-none');
+            profileContent.classList.remove('scale-95');
+            profileContent.classList.add('scale-100');
+
+            // Trigger item animations
+            revealItems.forEach(item => {
+                item.classList.remove('opacity-0', 'translate-y-4');
+            });
+        }
+
+        function closeModal() {
+            profileModal.classList.add('opacity-0', 'pointer-events-none');
+            profileContent.classList.remove('scale-100');
+            profileContent.classList.add('scale-95');
+
+            // Reset item animations
+            setTimeout(() => {
+                revealItems.forEach(item => {
+                    item.classList.add('opacity-0', 'translate-y-4');
+                });
+            }, 300);
+        }
+
+        if (openProfileBtn) {
+            openProfileBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                openModal();
+            });
+        }
+
+        closeProfileBtns.forEach(btn => {
+            btn.addEventListener('click', closeModal);
+        });
+
+        // Close on Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+                // Also close social dock if open
+                const dock = document.getElementById('social-dock');
+                if (dock) dock.classList.add('opacity-0', 'pointer-events-none', 'translate-y-2');
+            }
+        });
+
+        // Social Dock Toggle
+        const btnLetsTalk = document.getElementById('btn-lets-talk');
+        const socialDock = document.getElementById('social-dock');
+
+        if (btnLetsTalk && socialDock) {
+            btnLetsTalk.addEventListener('click', (e) => {
+                e.preventDefault();
+                // Toggle Dock
+                const isHidden = socialDock.classList.contains('opacity-0');
+                if (isHidden) {
+                    socialDock.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-2');
+                } else {
+                    socialDock.classList.add('opacity-0', 'pointer-events-none', 'translate-y-2');
+                }
+            });
+
+            // Close dock when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!btnLetsTalk.contains(e.target) && !socialDock.contains(e.target)) {
+                    socialDock.classList.add('opacity-0', 'pointer-events-none', 'translate-y-2');
+                }
+            });
+        }
+    </script>
 </body>
 
 </html>

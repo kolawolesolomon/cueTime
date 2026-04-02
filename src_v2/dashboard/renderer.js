@@ -58,7 +58,16 @@ const els = {
     newScreenModal: document.getElementById('new-screen-modal'),
     btnIgnoreScreen: document.getElementById('btn-ignore-screen'),
     btnLaunchScreen: document.getElementById('btn-launch-screen'),
-    newScreenLabel: document.getElementById('new-screen-label')
+    newScreenLabel: document.getElementById('new-screen-label'),
+
+    // Analytics Modal
+    analyticsModal: document.getElementById('analytics-modal'),
+    btnOpenAnalytics: document.getElementById('btn-open-analytics'),
+    btnCloseAnalytics: document.getElementById('btn-close-analytics'),
+    analyticsTableBody: document.getElementById('analytics-table-body'),
+    analyticsTotalSlip: document.getElementById('analytics-total-slip'),
+    btnClearAnalytics: document.getElementById('btn-clear-analytics'),
+    btnExportCsv: document.getElementById('btn-export-csv')
 };
 
 // State
@@ -68,6 +77,7 @@ let editingEventId = null;
 // ===== EVENT SCHEDULE STATE MANAGER =====
 const EventSchedule = {
     events: [],
+    hiddenHistory: [], // Stores completed/tracked events that were deleted
     activeEventId: null,
     autoAdvance: true,
     nextId: 1,
@@ -81,9 +91,18 @@ const EventSchedule = {
             speaker: eventData.speaker || '',
             notes: eventData.notes || '',
             status: 'pending',
-            createdAt: Date.now()
+            createdAt: Date.now(),
+            // Analytics tracking
+            startTime: null,
+            endTime: null,
+            actualDuration: 0,
+            variance: 0,
+            wasSkipped: false,
+            _accumulatedMs: 0,
+            _lastResumeTime: null
         };
         this.events.push(event);
+        this.saveAnalyticsState();
         return event;
     },
 
@@ -96,9 +115,18 @@ const EventSchedule = {
             speaker: eventData.speaker || '',
             notes: eventData.notes || '',
             status: 'pending',
-            createdAt: Date.now()
+            createdAt: Date.now(),
+            // Analytics tracking
+            startTime: null,
+            endTime: null,
+            actualDuration: 0,
+            variance: 0,
+            wasSkipped: false,
+            _accumulatedMs: 0,
+            _lastResumeTime: null
         };
         this.events.splice(index, 0, event);
+        this.saveAnalyticsState();
         return event;
     },
 
@@ -111,6 +139,7 @@ const EventSchedule = {
                 event.duration = updates.duration * 60 * 1000;
             }
         }
+        this.saveAnalyticsState();
         return event;
     },
 
@@ -118,10 +147,15 @@ const EventSchedule = {
     deleteEvent(id) {
         const index = this.events.findIndex(e => e.id === id);
         if (index !== -1) {
+            const event = this.events[index];
+            if (event.status === 'completed' || event.actualDuration > 0) {
+                this.hiddenHistory.push(event);
+            }
             this.events.splice(index, 1);
             if (this.activeEventId === id) {
                 this.activeEventId = null;
             }
+            this.saveAnalyticsState();
             return true;
         }
         return false;
@@ -134,17 +168,17 @@ const EventSchedule = {
 
     // Set active event
     setActive(id) {
-        // Mark previous active as completed
-        if (this.activeEventId) {
-            const prev = this.getEvent(this.activeEventId);
-            if (prev) prev.status = 'completed';
-        }
+        // Mark previous active as completed tracking
+        this.completeActive();
 
         this.activeEventId = id;
         const event = this.getEvent(id);
         if (event) {
             event.status = 'active';
+            if (!event.startTime) event.startTime = new Date().toISOString();
+            event._lastResumeTime = Date.now();
         }
+        this.saveAnalyticsState();
     },
 
     // Complete active event
@@ -153,8 +187,20 @@ const EventSchedule = {
             const event = this.getEvent(this.activeEventId);
             if (event) {
                 event.status = 'completed';
+                event.endTime = new Date().toISOString();
+                
+                // Finalize duration accumulation
+                if (event._lastResumeTime) {
+                    event._accumulatedMs += (Date.now() - event._lastResumeTime);
+                    event._lastResumeTime = null;
+                }
+                
+                event.actualDuration = Math.round(event._accumulatedMs / 1000);
+                const plannedSeconds = Math.round(event.duration / 1000);
+                event.variance = event.actualDuration - plannedSeconds;
             }
             this.activeEventId = null;
+            this.saveAnalyticsState();
         }
     },
 
@@ -165,12 +211,37 @@ const EventSchedule = {
 
     // Format duration for display (ms to HH:MM:SS)
     formatDuration(ms) {
-        const totalSeconds = Math.floor(ms / 1000);
+        const totalSeconds = Math.floor(Math.abs(ms) / 1000);
         const hours = Math.floor(totalSeconds / 3600);
         const minutes = Math.floor((totalSeconds % 3600) / 60);
         const seconds = totalSeconds % 60;
 
-        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        const sign = ms < 0 ? '-' : '';
+        return `${sign}${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    },
+
+    // Analytics Persistence
+    saveAnalyticsState() {
+        window.electronAPI.saveAnalytics({
+            events: this.events,
+            hiddenHistory: this.hiddenHistory,
+            nextId: this.nextId
+        });
+        
+        // Refresh analytics UI if open
+        if (typeof renderAnalyticsTable === 'function') {
+            renderAnalyticsTable();
+        }
+    },
+
+    async loadAnalyticsState() {
+        const state = await window.electronAPI.loadAnalytics();
+        if (state) {
+            this.events = state.events || [];
+            this.hiddenHistory = state.hiddenHistory || [];
+            this.nextId = state.nextId || 1;
+        }
+        renderEvents();
     }
 };
 
@@ -415,6 +486,25 @@ function init() {
     timer.callbacks.onStatusChange = (state) => {
         updateDisplay(state.timeStr, state.warningLevel); // Ensure display syncs with state changes (Presets, Reset, etc.)
         updateControls(state.status);
+        
+        // Handle Analytics accumulation on Pause/Resume
+        if (EventSchedule.activeEventId) {
+            const event = EventSchedule.getEvent(EventSchedule.activeEventId);
+            if (event) {
+                if (state.status === 'RUNNING') {
+                    if (!event._lastResumeTime) {
+                        event._lastResumeTime = Date.now();
+                    }
+                } else if (state.status === 'PAUSED' || state.status === 'IDLE') {
+                    if (event._lastResumeTime) {
+                        event._accumulatedMs += (Date.now() - event._lastResumeTime);
+                        event._lastResumeTime = null;
+                        EventSchedule.saveAnalyticsState();
+                    }
+                }
+            }
+        }
+        
         broadcastState();
     };
 
@@ -710,6 +800,12 @@ function init() {
             }
         });
     }
+
+    // 13. Initialize Analytics
+    initAnalytics();
+    
+    // 14. Load Persisted Analytics
+    EventSchedule.loadAnalyticsState();
 }
 
 // Logic Helpers
@@ -1051,3 +1147,202 @@ function handleDrop(e) {
 
 // Start
 init();
+
+// ===== SESSION ANALYTICS LOGIC =====
+function initAnalytics() {
+    els.btnOpenAnalytics.addEventListener('click', () => {
+        renderAnalyticsTable();
+        els.analyticsModal.showModal();
+    });
+
+    els.btnCloseAnalytics.addEventListener('click', () => {
+        els.analyticsModal.close();
+    });
+
+    els.btnClearAnalytics.addEventListener('click', async () => {
+        // Simple confirm for clearing memory
+        if (confirm("Are you sure you want to clear all Session Analytics data? This cannot be undone.")) {
+            EventSchedule.events.forEach(e => {
+                e.actualDuration = 0;
+                e.variance = 0;
+                e.startTime = null;
+                e.endTime = null;
+            });
+            EventSchedule.hiddenHistory = [];
+            EventSchedule.saveAnalyticsState();
+            await window.electronAPI.purgeAnalytics();
+            renderAnalyticsTable();
+        }
+    });
+
+    els.btnExportCsv.addEventListener('click', async () => {
+        const rows = generateReportRows();
+        if (rows.length === 0) {
+            alert("No data to export.");
+            return;
+        }
+
+        const btnOrig = els.btnExportCsv.innerHTML;
+        els.btnExportCsv.innerHTML = '<span class="material-symbols-outlined text-[18px] animate-spin">sync</span> Saving...';
+        
+        try {
+            const data = {
+                eventTitle: sessionTitle,
+                operatorName: 'Operator',
+                totalVariance: els.analyticsTotalSlip.textContent
+            };
+
+            const result = await window.electronAPI.exportCsvReport(data, rows);
+            
+            if (result.success) {
+                alert(`Export successful!\n${result.filePath}`);
+            } else if (!result.cancelled) {
+                alert(`Export failed: ${result.error}`);
+            }
+        } finally {
+            els.btnExportCsv.innerHTML = btnOrig;
+        }
+    });
+}
+
+function generateReportRows() {
+    const combined = [...EventSchedule.hiddenHistory, ...EventSchedule.events]
+        .filter(e => e.actualDuration > 0 || e.status === 'completed' || e.status === 'active')
+        .sort((a, b) => a.createdAt - b.createdAt); // Try to approximate original creation order
+    
+    let rows = [];
+    let i = 1;
+    combined.forEach(event => {
+        let liveAccumulated = event._accumulatedMs || 0;
+        if (event.status === 'active' && event._lastResumeTime) {
+            liveAccumulated += (Date.now() - event._lastResumeTime);
+        }
+        
+        let actualSecs = event.status === 'active' ? Math.round(liveAccumulated / 1000) : event.actualDuration;
+        let varianceSecs = event.status === 'active' ? (actualSecs - Math.round(event.duration / 1000)) : event.variance;
+
+        rows.push({
+            id: event.id,
+            index: i++,
+            title: event.title,
+            plannedDuration: EventSchedule.formatDuration(event.duration),
+            actualDuration: EventSchedule.formatDuration(actualSecs * 1000), // convert back to ms for format
+            variance: EventSchedule.formatDuration(varianceSecs * 1000),
+            rawActual: actualSecs
+        });
+    });
+    return rows;
+}
+
+function renderAnalyticsTable() {
+    const rows = generateReportRows();
+    let totalSlip = 0;
+    
+    els.analyticsTableBody.innerHTML = '';
+    
+    if (rows.length === 0) {
+        els.analyticsTableBody.innerHTML = `<tr>
+            <td colspan="5" class="text-center py-10 text-zinc-500 italic">No tracked segments yet.</td>
+        </tr>`;
+        els.analyticsTotalSlip.textContent = "+00:00:00";
+        els.analyticsTotalSlip.className = "text-xl font-timer font-bold tracking-widest text-zinc-500";
+        return;
+    }
+
+    rows.forEach(r => {
+        // Back-calculate variance to ms to add to total
+        const rawVariance = r.rawActual - (EventSchedule.getEvent(r.id)?.duration || 0) / 1000;
+        let eventVariance = 0;
+        
+        // Use the event's actual variance property rather than reverse-engineering
+        const originalEvent = EventSchedule.getEvent(r.id) || EventSchedule.hiddenHistory.find(e => e.id === r.id);
+        if (originalEvent) {
+            eventVariance = originalEvent.status === 'active' ? rawVariance : (originalEvent.variance || 0);
+            totalSlip += eventVariance;
+        }
+
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-zinc-800/30 transition-colors border-b border-zinc-800/50";
+        
+        // Variance color
+        let varColor = "text-zinc-500";
+        if (eventVariance > 0) varColor = "text-red-400";
+        if (eventVariance < 0) varColor = "text-green-400";
+
+        tr.innerHTML = `
+            <td class="py-3 px-2 text-zinc-500">${r.index}</td>
+            <td class="py-3 px-2 text-zinc-300 font-bold truncate max-w-[200px]" title="${r.title}">${r.title}</td>
+            <td class="py-3 px-2 text-right text-zinc-500 font-timer">${r.plannedDuration}</td>
+            <td class="py-3 px-4 text-right cursor-pointer group" data-edit-id="${r.id}">
+                <div class="flex items-center justify-end gap-2 group-hover:bg-zinc-800 p-1 -m-1 rounded transition-colors">
+                    <span class="actual-readout font-timer text-white">${r.actualDuration}</span>
+                    <input class="actual-input hidden w-20 bg-zinc-900 border border-primary text-white font-timer text-right text-xs p-1 rounded focus:outline-none" type="text" value="${r.actualDuration}" />
+                    <span class="material-symbols-outlined text-[14px] text-zinc-600 group-hover:text-primary transition-colors">edit</span>
+                </div>
+            </td>
+            <td class="py-3 px-2 text-right font-timer font-bold ${varColor}">${EventSchedule.formatDuration(eventVariance * 1000)}</td>
+        `;
+        
+        // Inline Edit Logic
+        const td = tr.querySelector('[data-edit-id]');
+        const readout = td.querySelector('.actual-readout');
+        const input = td.querySelector('.actual-input');
+        const icon = td.querySelector('.material-symbols-outlined');
+
+        const saveEdit = () => {
+            const val = input.value.trim();
+            // Basic parsing HH:MM:SS or MM:SS
+            let parsedSeconds = 0;
+            const parts = val.split(':').map(Number);
+            if (parts.length === 3) parsedSeconds = (parts[0] * 3600) + (parts[1] * 60) + parts[2];
+            else if (parts.length === 2) parsedSeconds = (parts[0] * 60) + parts[1];
+            else if (!isNaN(parts[0])) parsedSeconds = parts[0]; // raw seconds
+
+            // Validate
+            if (!isNaN(parsedSeconds) && originalEvent) {
+                originalEvent.actualDuration = parsedSeconds;
+                originalEvent.variance = parsedSeconds - Math.round(originalEvent.duration / 1000);
+                EventSchedule.saveAnalyticsState();
+            }
+            
+            // Toggle UI back
+            input.classList.add('hidden');
+            readout.classList.remove('hidden');
+            icon.classList.remove('hidden');
+            
+            // Re-render table instead of complex DOM diff
+            renderAnalyticsTable();
+        };
+
+        td.addEventListener('click', (e) => {
+            if (!input.classList.contains('hidden')) return; // already editing
+            readout.classList.add('hidden');
+            icon.classList.add('hidden');
+            input.classList.remove('hidden');
+            input.focus();
+            input.select();
+        });
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') saveEdit();
+            if (e.key === 'Escape') {
+                input.value = r.actualDuration; // reset
+                input.classList.add('hidden');
+                readout.classList.remove('hidden');
+                icon.classList.remove('hidden');
+            }
+        });
+
+        input.addEventListener('blur', () => saveEdit());
+
+        els.analyticsTableBody.appendChild(tr);
+    });
+
+    // Formatting total slip
+    let slipColor = "text-zinc-500";
+    if (totalSlip > 0) slipColor = "text-red-400 drop-shadow-[0_0_8px_rgba(248,113,113,0.3)]";
+    if (totalSlip < 0) slipColor = "text-green-400 drop-shadow-[0_0_8px_rgba(74,222,128,0.3)]";
+    
+    els.analyticsTotalSlip.textContent = EventSchedule.formatDuration(totalSlip * 1000);
+    els.analyticsTotalSlip.className = `text-2xl font-timer font-bold tracking-widest ${slipColor}`;
+}

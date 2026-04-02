@@ -1,4 +1,4 @@
-const { app, BrowserWindow, screen, ipcMain, powerSaveBlocker } = require('electron');
+const { app, BrowserWindow, screen, ipcMain, powerSaveBlocker, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -9,6 +9,7 @@ console.log(`[cueTime] Launching UI from: ${SRC_DIR}`);
 
 const USER_DATA_PATH = app.getPath('userData');
 const STATE_FILE = path.join(USER_DATA_PATH, 'session-state.json');
+const ANALYTICS_FILE = path.join(USER_DATA_PATH, 'analytics-state.json');
 
 let dashboardWindow = null;
 let viewerWindow = null;
@@ -19,7 +20,7 @@ const MAX_RETRIES = 5;
 // const yesterday = new Date();
 // yesterday.setDate(yesterday.getDate() - 1);
 // const EXPIRY_DATE = yesterday;
-const EXPIRY_DATE = new Date('2026-03-01T00:00:00'); // Hardcoded Expiry
+const EXPIRY_DATE = new Date('2026-04-30T23:59:59'); // Hardcoded Expiry
 const WARNING_DAYS = 5;
 
 // Expiration Check Helper
@@ -75,13 +76,16 @@ function createDashboard() {
     const primaryDisplay = screen.getPrimaryDisplay();
     const { width, height } = primaryDisplay.workAreaSize;
 
+    const initWidth = Math.min(900, width);
+    const initHeight = Math.min(1000, height);
+
     dashboardWindow = new BrowserWindow({
-        width: 900,
-        height: 1000,
+        width: initWidth,
+        height: initHeight,
         minWidth: 600,
         minHeight: 700,
-        x: primaryDisplay.bounds.x + (width - 900) / 2,
-        y: primaryDisplay.bounds.y + (height - 1000) / 2,
+        x: Math.max(primaryDisplay.bounds.x, primaryDisplay.bounds.x + Math.floor((width - initWidth) / 2)),
+        y: Math.max(primaryDisplay.bounds.y, primaryDisplay.bounds.y + Math.floor((height - initHeight) / 2)),
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: false,
@@ -320,12 +324,90 @@ ipcMain.handle('load-state', async () => {
     return null;
 });
 
+// Analytics Persistence
+ipcMain.on('save-analytics', (event, state) => {
+    try {
+        fs.writeFileSync(ANALYTICS_FILE, JSON.stringify(state));
+    } catch (err) {
+        console.error('Failed to save analytics state:', err);
+    }
+});
+
+ipcMain.handle('load-analytics', async () => {
+    try {
+        if (fs.existsSync(ANALYTICS_FILE)) {
+            const data = fs.readFileSync(ANALYTICS_FILE, 'utf8');
+            return JSON.parse(data);
+        }
+    } catch (err) {
+        console.error('Failed to load analytics state:', err);
+    }
+    return null;
+});
+
+ipcMain.handle('purge-analytics', async () => {
+    try {
+        if (fs.existsSync(ANALYTICS_FILE)) {
+            fs.unlinkSync(ANALYTICS_FILE);
+            return true;
+        }
+    } catch (err) {
+        console.error('Failed to purge analytics:', err);
+    }
+    return false;
+});
+
+ipcMain.handle('export-csv-report', async (event, data, rows) => {
+    try {
+        const { filePath } = await dialog.showSaveDialog({
+            title: 'Export Session Report',
+            defaultPath: `Show_Report_${new Date().toISOString().split('T')[0]}.csv`,
+            filters: [
+                { name: 'CSV File', extensions: ['csv'] }
+            ]
+        });
+
+        if (!filePath) return { success: false, cancelled: true };
+
+        // Simple CSV construction
+        let csvContent = "";
+        
+        // Add metadata
+        csvContent += `Event:,${data.eventTitle || 'cueTime Session'}\n`;
+        csvContent += `Operator:,${data.operatorName || 'Operator'}\n`;
+        csvContent += `Date:,${new Date().toLocaleDateString()}\n`;
+        csvContent += `Total Variance:,${data.totalVariance}\n\n`;
+
+        // Add headers
+        // Event Schedule uses: '#', 'Title', 'Planned', 'Actual', 'Variance', 'Notes'
+        csvContent += `No.,Segment Title,Planned Duration,Actual Duration,Variance\n`;
+        
+        // Add rows
+        rows.forEach(r => {
+            // Escape potential commas in title by quoting
+            const escapedTitle = r.title.replace(/"/g, '""');
+            csvContent += `${r.index},"${escapedTitle}",${r.plannedDuration},${r.actualDuration},${r.variance}\n`;
+        });
+
+        fs.writeFileSync(filePath, csvContent);
+        return { success: true, filePath };
+
+    } catch (err) {
+        console.error('Failed to export CSV:', err);
+        return { success: false, error: err.message };
+    }
+});
+
 app.whenReady().then(() => {
     // Fresh Start: Delete previous state if exists
     try {
         if (fs.existsSync(STATE_FILE)) {
             fs.unlinkSync(STATE_FILE);
             console.log('Previous session state cleared (Fresh Start).');
+        }
+        if (fs.existsSync(ANALYTICS_FILE)) {
+            fs.unlinkSync(ANALYTICS_FILE);
+            console.log('Previous analytics state cleared (Fresh Start).');
         }
     } catch (err) {
         console.error('Failed to clear previous state:', err);
