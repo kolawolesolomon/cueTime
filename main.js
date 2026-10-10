@@ -20,7 +20,7 @@ const MAX_RETRIES = 5;
 // const yesterday = new Date();
 // yesterday.setDate(yesterday.getDate() - 1);
 // const EXPIRY_DATE = yesterday;
-const EXPIRY_DATE = new Date('2026-04-30T23:59:59'); // Hardcoded Expiry
+const EXPIRY_DATE = new Date('2027-01-01T23:59:59'); // Hardcoded Expiry
 const WARNING_DAYS = 5;
 
 // Expiration Check Helper
@@ -371,7 +371,7 @@ ipcMain.handle('export-csv-report', async (event, data, rows) => {
 
         // Simple CSV construction
         let csvContent = "";
-        
+
         // Add metadata
         csvContent += `Event:,${data.eventTitle || 'cueTime Session'}\n`;
         csvContent += `Operator:,${data.operatorName || 'Operator'}\n`;
@@ -381,7 +381,7 @@ ipcMain.handle('export-csv-report', async (event, data, rows) => {
         // Add headers
         // Event Schedule uses: '#', 'Title', 'Planned', 'Actual', 'Variance', 'Notes'
         csvContent += `No.,Segment Title,Planned Duration,Actual Duration,Variance\n`;
-        
+
         // Add rows
         rows.forEach(r => {
             // Escape potential commas in title by quoting
