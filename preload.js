@@ -19,6 +19,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Persistence
     saveState: (state) => ipcRenderer.send('save-state', state),
     loadState: () => ipcRenderer.invoke('load-state'),
+    
+    // Analytics Persistence & Reports
+    saveAnalytics: (state) => ipcRenderer.send('save-analytics', state),
+    loadAnalytics: () => ipcRenderer.invoke('load-analytics'),
+    purgeAnalytics: () => ipcRenderer.invoke('purge-analytics'),
+    exportCsvReport: (data, rows) => ipcRenderer.invoke('export-csv-report', data, rows),
+
 
     // Viewer Control
     sendViewerEscape: () => ipcRenderer.send('viewer-escape'),
@@ -26,4 +33,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // App Control
     onAppClosing: (callback) => ipcRenderer.on('app-closing', callback),
     sendCloseResult: (isRunning) => ipcRenderer.send('close-check-result', { isRunning }),
+
+    // Screen Detection
+    onDisplayDetected: (callback) => ipcRenderer.on('display-detected', (_event, value) => {
+        console.log('[Preload] Received display-detected:', value);
+        callback(value);
+    }),
+    restoreZOrder: () => ipcRenderer.send('restore-z-order'),
+    onBetaStatus: (callback) => ipcRenderer.on('beta-status', (_event, value) => callback(value)),
+
+    // Utilities
+    openExternal: (url) => ipcRenderer.send('open-external', url)
 });

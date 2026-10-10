@@ -1,8 +1,8 @@
-# FocusTimer ⏱️ 
+# cueTime ⏱️ 
 
 The Free, Crash-Proof Desktop Timer for Live Events.
 
-Stop trusting browser tabs. FocusTime is a native Windows app built for Churches, AV Teams, and Conferences that works 100% offline.
+Stop trusting browser tabs. cueTime is a native Windows app built for Churches, AV Teams, and Conferences that works 100% offline.
 
 Why Use It?
 
@@ -15,6 +15,13 @@ Why Use It?
 🖥️ Dual Screen: Controls on your laptop, clean timer on the projector.
 
 [Download Public Beta (Free)] – Your event deserves a trust anchor.
+
+## V2 Redesign Features
+*   **Modern Dark UI**: Complete aesthetic overhaul with vibrant colors and animations.
+*   **Event Scheduling**: Drag-and-drop schedule management.
+*   **Smart Overtime**: Negative counting (`-00:10`) and Red Pulse animations when time runs out.
+*   **Dynamic Screen Detection**: Auto-launches viewer on 2nd screen; Hot-plug detection with confirmation modal.
+*   **Robust Controls**: Restart completed events, delete active events safely.
 
 
 

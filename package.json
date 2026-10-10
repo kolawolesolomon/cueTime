@@ -1,20 +1,42 @@
 {
-  "name": "focustimer",
-  "version": "1.1.6",
+  "name": "cuetime",
+  "version": "2.1.1",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder"
+    "dist": "electron-builder",
+    "build:css": "tailwindcss -i ./src_v2/styles/input.css -o ./src_v2/styles/output.css",
+    "watch:css": "tailwindcss -i ./src_v2/styles/input.css -o ./src_v2/styles/output.css --watch"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "build": {
-    "appId": "com.focustimer.app",
-    "productName": "FocusTime",
+    "appId": "com.cuetime.app",
+    "productName": "cueTime",
     "win": {
       "target": "nsis",
       "icon": "icon.png"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "icon.png",
+      "category": "public.app-category.productivity"
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 410,
+          "y": 150,
+          "type": "link",
+          "path": "/Applications"
+        },
+        {
+          "x": 130,
+          "y": 150,
+          "type": "file"
+        }
+      ]
     },
     "nsis": {
       "oneClick": false,
@@ -23,11 +45,24 @@
     "files": [
       "**/*",
       "!src/**/*.ts",
-      "!**/*.map"
+      "!**/*.map",
+      "!website/**/*",
+      "!src_backup/**/*",
+      "!dashboard_experiment/**/*",
+      "!classic_design_specs/**/*",
+      "!design/**/*",
+      "!docs/**/*",
+      "!*.docx",
+      "!*.py",
+      "!*.md",
+      "!*.txt"
     ]
   },
   "devDependencies": {
+    "autoprefixer": "^10.4.23",
     "electron": "^39.2.7",
-    "electron-builder": "^24.13.3"
+    "electron-builder": "^24.13.3",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.19"
   }
 }

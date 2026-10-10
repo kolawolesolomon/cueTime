@@ -1,37 +1,66 @@
-const { app, BrowserWindow, screen, ipcMain, powerSaveBlocker } = require('electron');
+const { app, BrowserWindow, screen, ipcMain, powerSaveBlocker, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
 
+// === CONFIGURATION ===
+const SRC_DIR = 'src_v2';
+console.log(`[cueTime] Launching UI from: ${SRC_DIR}`);
+
 const USER_DATA_PATH = app.getPath('userData');
 const STATE_FILE = path.join(USER_DATA_PATH, 'session-state.json');
+const ANALYTICS_FILE = path.join(USER_DATA_PATH, 'analytics-state.json');
 
 let dashboardWindow = null;
 let viewerWindow = null;
 let splashWindow = null;
 let viewerRetryCount = 0;
 const MAX_RETRIES = 5;
+// TEST MODE: Set date to yesterday to trigger expiry
+// const yesterday = new Date();
+// yesterday.setDate(yesterday.getDate() - 1);
+// const EXPIRY_DATE = yesterday;
+const EXPIRY_DATE = new Date('2027-01-01T23:59:59'); // Hardcoded Expiry
+const WARNING_DAYS = 5;
+
+// Expiration Check Helper
+function checkExpiry() {
+    const now = new Date();
+    const timeDiff = EXPIRY_DATE - now;
+    const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+
+    console.log(`[Main] Beta Expiry Check: ${daysLeft} days remaining`);
+
+    if (daysLeft <= 0) {
+        return 'expired';
+    }
+    if (daysLeft <= WARNING_DAYS) {
+        return { status: 'warning', days: daysLeft, date: EXPIRY_DATE.toLocaleDateString() };
+    }
+    return { status: 'valid', days: daysLeft, date: EXPIRY_DATE.toLocaleDateString() };
+}
 
 // Prevent sleep
 const powerSaveBlockerId = powerSaveBlocker.start('prevent-display-sleep');
 
 function createSplash() {
     splashWindow = new BrowserWindow({
-        width: 500,
-        height: 400,
+        width: 600,
+        height: 320,
         frame: false,
         alwaysOnTop: true,
-        transparent: false,
-        backgroundColor: '#121212',
+        transparent: true,
+        backgroundColor: '#00000000',
         resizable: false,
         webPreferences: {
             nodeIntegration: true, // For simple shell usage in splash
             contextIsolation: false
         },
-        title: 'FocusTime'
+        title: 'cueTime',
+        icon: path.join(__dirname, 'icon.png')
     });
 
-    splashWindow.loadFile(path.join(__dirname, 'src', 'splash', 'index.html'));
+    splashWindow.loadFile(path.join(__dirname, 'src_v2', 'splash', 'index.html'));
 
     // Auto-close splash and launch dashboard after 3 seconds
     setTimeout(() => {
@@ -47,22 +76,49 @@ function createDashboard() {
     const primaryDisplay = screen.getPrimaryDisplay();
     const { width, height } = primaryDisplay.workAreaSize;
 
+    const initWidth = Math.min(900, width);
+    const initHeight = Math.min(1000, height);
+
     dashboardWindow = new BrowserWindow({
-        width: 600,
-        height: 920,
-        x: primaryDisplay.bounds.x + (width - 600) / 2,
-        y: primaryDisplay.bounds.y + (height - 920) / 2,
+        width: initWidth,
+        height: initHeight,
+        minWidth: 600,
+        minHeight: 700,
+        x: Math.max(primaryDisplay.bounds.x, primaryDisplay.bounds.x + Math.floor((width - initWidth) / 2)),
+        y: Math.max(primaryDisplay.bounds.y, primaryDisplay.bounds.y + Math.floor((height - initHeight) / 2)),
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: false,
             contextIsolation: true,
         },
-        title: 'FocusTime - Dashboard',
+        title: `cueTime - Dashboard`,
         autoHideMenuBar: true,
-        show: false
+        show: false,
+        icon: path.join(__dirname, 'icon.png')
     });
 
-    dashboardWindow.loadFile(path.join(__dirname, 'src', 'dashboard', 'index.html'));
+    const expiryStatus = checkExpiry();
+
+    if (expiryStatus === 'expired') {
+        dashboardWindow.loadFile(path.join(__dirname, SRC_DIR, 'expired', 'index.html'));
+    } else {
+        dashboardWindow.loadFile(path.join(__dirname, SRC_DIR, 'dashboard', 'index.html'));
+
+        // Send status on every load (fix reload bug)
+        dashboardWindow.webContents.on('did-finish-load', () => {
+            dashboardWindow.webContents.send('beta-status', expiryStatus);
+
+            // Handle Auto-Launch for Secondary Display
+            if (global.autoLaunchViewer) {
+                console.log('[Main] Dashboard loaded. Executing queued Viewer launch...');
+                const displays = screen.getAllDisplays();
+                if (displays.length > 1 && !viewerWindow) {
+                    createViewer(displays[1].id);
+                }
+                global.autoLaunchViewer = false; // Reset flag
+            }
+        });
+    }
 
     dashboardWindow.once('ready-to-show', () => {
         dashboardWindow.show();
@@ -118,13 +174,23 @@ function createDashboard() {
 }
 
 function createViewer(displayId = null) {
-    if (viewerWindow) return;
+    // If viewer exists, close it first so we can move it/re-create on new display
+    if (viewerWindow && !viewerWindow.isDestroyed()) {
+        // CRITICAL: Remove listeners to prevent 'closed' handler from nulling the NEW viewerWindow
+        viewerWindow.removeAllListeners('closed');
+        viewerWindow.removeAllListeners('render-process-gone');
+        viewerWindow.close();
+        viewerWindow = null;
+    }
 
     const displays = screen.getAllDisplays();
+    console.log(`[Main] createViewer: Requested ID: ${displayId} (Type: ${typeof displayId})`);
+    console.log(`[Main] Available Displays: ${displays.map(d => `${d.id} (${d.bounds.x},${d.bounds.y})`).join(', ')}`);
+
     let targetDisplay;
 
     if (displayId) {
-        targetDisplay = displays.find(d => d.id === displayId);
+        targetDisplay = displays.find(d => d.id == displayId);
     }
 
     if (!targetDisplay) {
@@ -148,10 +214,11 @@ function createViewer(displayId = null) {
             contextIsolation: true,
         },
         backgroundColor: '#000000',
-        title: 'FocusTime - Viewer',
+        title: 'cueTime - Viewer',
+        icon: path.join(__dirname, 'icon.png')
     });
 
-    viewerWindow.loadFile(path.join(__dirname, 'src', 'viewer', 'index.html'));
+    viewerWindow.loadFile(path.join(__dirname, SRC_DIR, 'viewer', 'index.html'));
 
     // Viewer Silent Recovery
     viewerWindow.webContents.on('render-process-gone', (event, details) => {
@@ -207,10 +274,26 @@ ipcMain.on('launch-viewer', (event, displayId) => {
     createViewer(displayId);
 });
 
+// IPC: Viewer Escape
 ipcMain.on('viewer-escape', () => {
     if (viewerWindow && !viewerWindow.isDestroyed()) {
         viewerWindow.close();
         viewerWindow = null;
+    }
+});
+
+// IPC: Open External Link
+ipcMain.on('open-external', (event, url) => {
+    require('electron').shell.openExternal(url);
+});
+
+// Z-Order Restoration
+ipcMain.on('restore-z-order', () => {
+    if (dashboardWindow && !dashboardWindow.isDestroyed()) {
+        dashboardWindow.setAlwaysOnTop(false);
+    }
+    if (viewerWindow && !viewerWindow.isDestroyed()) {
+        viewerWindow.setAlwaysOnTop(true);
     }
 });
 
@@ -241,12 +324,90 @@ ipcMain.handle('load-state', async () => {
     return null;
 });
 
+// Analytics Persistence
+ipcMain.on('save-analytics', (event, state) => {
+    try {
+        fs.writeFileSync(ANALYTICS_FILE, JSON.stringify(state));
+    } catch (err) {
+        console.error('Failed to save analytics state:', err);
+    }
+});
+
+ipcMain.handle('load-analytics', async () => {
+    try {
+        if (fs.existsSync(ANALYTICS_FILE)) {
+            const data = fs.readFileSync(ANALYTICS_FILE, 'utf8');
+            return JSON.parse(data);
+        }
+    } catch (err) {
+        console.error('Failed to load analytics state:', err);
+    }
+    return null;
+});
+
+ipcMain.handle('purge-analytics', async () => {
+    try {
+        if (fs.existsSync(ANALYTICS_FILE)) {
+            fs.unlinkSync(ANALYTICS_FILE);
+            return true;
+        }
+    } catch (err) {
+        console.error('Failed to purge analytics:', err);
+    }
+    return false;
+});
+
+ipcMain.handle('export-csv-report', async (event, data, rows) => {
+    try {
+        const { filePath } = await dialog.showSaveDialog({
+            title: 'Export Session Report',
+            defaultPath: `Show_Report_${new Date().toISOString().split('T')[0]}.csv`,
+            filters: [
+                { name: 'CSV File', extensions: ['csv'] }
+            ]
+        });
+
+        if (!filePath) return { success: false, cancelled: true };
+
+        // Simple CSV construction
+        let csvContent = "";
+
+        // Add metadata
+        csvContent += `Event:,${data.eventTitle || 'cueTime Session'}\n`;
+        csvContent += `Operator:,${data.operatorName || 'Operator'}\n`;
+        csvContent += `Date:,${new Date().toLocaleDateString()}\n`;
+        csvContent += `Total Variance:,${data.totalVariance}\n\n`;
+
+        // Add headers
+        // Event Schedule uses: '#', 'Title', 'Planned', 'Actual', 'Variance', 'Notes'
+        csvContent += `No.,Segment Title,Planned Duration,Actual Duration,Variance\n`;
+
+        // Add rows
+        rows.forEach(r => {
+            // Escape potential commas in title by quoting
+            const escapedTitle = r.title.replace(/"/g, '""');
+            csvContent += `${r.index},"${escapedTitle}",${r.plannedDuration},${r.actualDuration},${r.variance}\n`;
+        });
+
+        fs.writeFileSync(filePath, csvContent);
+        return { success: true, filePath };
+
+    } catch (err) {
+        console.error('Failed to export CSV:', err);
+        return { success: false, error: err.message };
+    }
+});
+
 app.whenReady().then(() => {
     // Fresh Start: Delete previous state if exists
     try {
         if (fs.existsSync(STATE_FILE)) {
             fs.unlinkSync(STATE_FILE);
             console.log('Previous session state cleared (Fresh Start).');
+        }
+        if (fs.existsSync(ANALYTICS_FILE)) {
+            fs.unlinkSync(ANALYTICS_FILE);
+            console.log('Previous analytics state cleared (Fresh Start).');
         }
     } catch (err) {
         console.error('Failed to clear previous state:', err);
@@ -259,6 +420,40 @@ app.whenReady().then(() => {
             createSplash();
         }
     });
+
+    // Initial Screen Check for Auto-Viewer (Startup)
+    // Only auto-launch if >1 screen detected on app start
+    const displays = screen.getAllDisplays();
+    console.log('[Main] Startup Display Count:', displays.length);
+
+    if (displays.length > 1) {
+        console.log('[Main] Multi-screen detected on startup. Queuing viewer launch...');
+        // Set flag to launch viewer once Dashboard is ready
+        global.autoLaunchViewer = true;
+    }
+
+    // Dynamic Screen Detection (Runtime)
+    screen.on('display-added', (event, newDisplay) => {
+        console.log('[Main] EVENT: display-added', newDisplay.id, newDisplay.label);
+
+        // If viewer is blocking primary screen, bring dashboard up
+        if (viewerWindow && !viewerWindow.isDestroyed()) {
+            viewerWindow.setAlwaysOnTop(false);
+            if (dashboardWindow && !dashboardWindow.isDestroyed()) {
+                dashboardWindow.setAlwaysOnTop(true);
+                dashboardWindow.focus();
+            }
+        }
+
+        if (dashboardWindow && !dashboardWindow.isDestroyed()) {
+            console.log('[Main] Sending display-detected to Dashboard');
+            dashboardWindow.webContents.send('display-detected', {
+                id: newDisplay.id,
+                label: newDisplay.label
+            });
+        }
+    });
+
 });
 
 app.on('window-all-closed', () => {
